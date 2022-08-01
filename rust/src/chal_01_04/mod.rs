@@ -1,14 +1,11 @@
 
 
 
-pub fn my_id<T>(a:T)->T{a}
+pub fn id<T>(a:T)->T{a}
 
-pub fn compose<'a,F,G,A,B,C>(f:F, g:G) -> Box<(dyn Fn(A)->C + 'a)>
-where
-    F: Fn(A)->B + 'a,
-    G: Fn(B)->C + 'a, 
+fn compose<A,B,C>(f: impl Fn(A)->B, g: impl Fn(B)->C) -> impl Fn(A)->C
 {
-    return Box::new(move |a| g(f(a)) );
+    return move |a:A| g(f(a));
 }
 
 #[cfg(test)]
@@ -16,7 +13,7 @@ mod tests {
     use super::*;
     #[test]
     fn test_id(){
-        assert_eq!(1,my_id(1));
+        assert_eq!(1,id(1));
     }
 
     #[test]
