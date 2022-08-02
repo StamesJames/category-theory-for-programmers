@@ -2,7 +2,7 @@ use std::{collections::HashMap, hash::Hash};
 
 struct Memoized<F,A,B>
 where
-    F: Fn(A)->B,
+    F: Fn(&A)->B,
     A: Clone + Hash + Eq,
     B: Clone
 {
@@ -12,7 +12,7 @@ where
 
 impl<F,A,B> Memoized<F,A,B>
 where
-    F: Fn(A)->B,
+    F: Fn(&A)->B,
     A: Clone + Hash + Eq,
     B: Clone
 {
@@ -23,7 +23,7 @@ where
         }
     }
 
-    fn apply(&self, arg:A)->B {
+    fn apply(&mut self, arg: &A)->B {
         if self.memory.contains_key(&arg) {
             return self.memory.get(&arg).unwrap().clone();
         } else {
