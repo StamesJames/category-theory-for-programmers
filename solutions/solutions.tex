@@ -698,5 +698,11 @@
             instance Bifunctor Snd where
                 bimap _ g (Snd b) = Snd $ g b
         \end{minted}
+    \subsection*{Challenge 5 (8.9.5)}
+        \begin{minted}{rust}
+            trait Bifunctor<A, B>{
+                fn bimap<NA, NB>(f: Fn(A)->NA, g: Fn(B)->NB, x:Bifunctor<A,B>)->Bifuncotr<NA,NB>;
+            }
+        \end{minted}
 
 \end{document}
