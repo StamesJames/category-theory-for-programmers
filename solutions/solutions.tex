@@ -622,12 +622,24 @@
             Implement the reader functor in your second favorit language (the first being Haskell, of course).
         \end{minipage}}
         \begin{minted}{rust}
-            fn fmap<R, F, G, H, A, B>(f: F, g: G) -> Box<dyn H> where
-                F: Fn(A)-> B + 'a,
-                G: Fn(R)-> A + 'a,
-                H: Fn(R)-> B + 'a,
-            {
-                compose(f, g)
+            pub trait Functor<'a>
+            where Self :'a {
+                type Unpluged : 'a ;
+                type Plug<B:'a>: Functor<'a> + 'a;
+
+                fn fmap<F:'a, B:'a>(self, f: F) -> Self::Plug<B>
+                where
+                    F: Fn(Self::Unpluged) -> B + 'a;
+            }
+
+            impl<'a,R:'a,A:'a> Functor<'a> for Box<dyn Fn(R) -> A + 'a> {
+                type Plug<B:'a> = Box<dyn Fn(R)->B + 'a>;
+                type Unpluged = A;
+                fn fmap<F:'a, B:'a>(self, f: F) -> Self::Plug<B>
+                    where
+                        F: Fn(Self::Unpluged) -> B + 'a {
+                    Box::new(move |r| f(self(r)))
+                }
             }
         \end{minted}
 
@@ -646,7 +658,15 @@
 \section*{Challenges Chapter 8 (8.9)}
 
     \subsection*{Challenge 1 (8.9.1)}
-
+        \fbox{\begin{minipage}{\textwidth}
+            Show that the data type:
+        \end{minipage}}
+        \begin{minted}{haskell}
+            data Pair a b = Pair a b
+        \end{minted}
+        \fbox{\begin{minipage}{\textwidth}
+            is a bifunctor. For additional creditimplement all three methods of Bifunctor and use equational reasoning to show that these definitions are compatible with the default implementations whenever they can be applied.
+        \end{minipage}}
         \begin{minted}{haskell}
             data Pair a b = Pair a b
 
@@ -657,7 +677,15 @@
         \end{minted}
 
     \subsection*{Challenge 2 (8.9.2)}
-
+        \fbox{\begin{minipage}{\textwidth}
+            Show the isomorphism between the standard definition of Maybe an this desugaring:
+        \end{minipage}}
+        \begin{minted}{haskell}
+            type Maybe' a = Either (Const () a) (Identity a)
+        \end{minted}
+        \fbox{\begin{minipage}{\textwidth}
+            Hint: Define two mappings between the two implementations. For additional credit, show that they are the inverse of each other using equational reasoning.
+        \end{minipage}}
         \begin{minted}{haskell}
             type Maybe' a = Either  (Const () a) (Identity a)
 
@@ -671,7 +699,16 @@
         \end{minted}
 
     \subsection*{Challenge 3 (8.9.3)}
-
+        \fbox{\begin{minipage}{\textwidth}
+            Lets's try another data structure. I call it a PreList because it's a precursor to a List. It replaces recursion with a type parameter b.
+        \end{minipage}}
+        \begin{minted}{haskell}
+            data PreList a b = Nil | Cons a b
+        \end{minted}
+        \fbox{\begin{minipage}{\textwidth}
+            You could recover our erlier definition of a List by recursively applying PreList to itself (we'll see how it's done when we talk about fixed points).\\
+            Show that PreList is an instance of Bifunctor
+        \end{minipage}}
         \begin{minted}{haskell}
             data PreList a b = Nil | Cons a b
             instance Bifunctor PreList where
@@ -684,7 +721,18 @@
         \end{minted}
 
     \subsection*{Challenge 4 (8.9.4)}
-
+        \fbox{\begin{minipage}{\textwidth}
+            Show that the following data types define bifunctors in a and b:
+        \end{minipage}}
+        \begin{minted}{haskell}
+            data K2 c a b = K2 c
+            data Fst a b = Fst a 
+            data Snd a b = Snd b
+        \end{minted}
+        \fbox{\begin{minipage}{\textwidth}
+            For additional credit, check your solutions against Conor
+            McBride's paper Clowns to the Left of me, Jokers to the Right1 .
+        \end{minipage}}
         \begin{minted}{haskell}
             newtype K2 c a b = K2 c
             instance Bifunctor (K2 c) where 
@@ -699,9 +747,32 @@
                 bimap _ g (Snd b) = Snd $ g b
         \end{minted}
     \subsection*{Challenge 5 (8.9.5)}
+    \fbox{\begin{minipage}{\textwidth}
+        Define a bifunctor in a language other than Haskell. Implement
+        bimap for a generic pair in that language.
+    \end{minipage}}
         \begin{minted}{rust}
-            trait Bifunctor<A, B>{
-                fn bimap<NA, NB>(f: Fn(A)->NA, g: Fn(B)->NB, x:Bifunctor<A,B>)->Bifuncotr<NA,NB>;
+            pub trait BiFunctor<'a> 
+            where Self : 'a {
+                type Unpluged1: 'a;
+                type Unpluged2: 'a;
+                type Plug<B1:'a,B2:'a>: BiFunctor<'a> + 'a;
+                fn bimap<F1:'a, F2:'a, B1:'a, B2:'a>(self, f1:F1, f2:F2) -> Self::Plug<B1,B2>
+                where
+                    F1: Fn(Self::Unpluged1) -> B1 + 'a,
+                    F2: Fn(Self::Unpluged2) -> B2 + 'a;
+            }
+
+            impl<'a,A1:'a,A2:'a> BiFunctor<'a> for (A1,A2) {
+                type Plug<B1:'a,B2:'a> = (B1,B2);
+                type Unpluged1 = A1;
+                type Unpluged2 = A2;
+                fn bimap<F1:'a, F2:'a, B1:'a, B2:'a>(self, f1:F1, f2:F2) -> Self::Plug<B1,B2>
+                    where
+                        F1: Fn(Self::Unpluged1) -> B1 + 'a,
+                        F2: Fn(Self::Unpluged2) -> B2 + 'a {
+                    (f1(self.0), f2(self.1))
+                }
             }
         \end{minted}
 
